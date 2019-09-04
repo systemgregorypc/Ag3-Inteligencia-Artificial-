@@ -10,4 +10,14 @@ Sistema operativo compatible
 
 --Esta herramienta actualmente solo es compatible con sitio web ( servidor ) usando plataforma de Unix, Linux, Windows y Mac.
 
+area contacto
+
+-- sitio web : 
+
+Cuenta de Google
+
+-- sitio email :ag3inteligencia@gmail.com
+
+
+
 2019
