@@ -18,6 +18,8 @@ Cuenta de Google
 
 -- sitio email :ag3inteligencia@gmail.com
 
+-- Donaciones:   Bitcoins
+                               32xZDFM1SJ5LeCWN3sTW9wPfLCW99v35uE
 
 
 2019
