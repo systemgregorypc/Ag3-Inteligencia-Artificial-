@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG3 IA Code — Entorno de Programación | Génesis AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: #070b14;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- BARRA SUPERIOR --- */
+        header {
+            height: 60px;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-area h1 {
+            font-size: 1.2rem;
+            color: #00f2fe;
+            letter-spacing: 1px;
+        }
+
+        .logo-area span {
+            font-size: 0.75rem;
+            background: rgba(0, 242, 254, 0.15);
+            color: #00f2fe;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 242, 254, 0.4);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #00f2fe;
+        }
+
+        /* --- CUERPO PRINCIPAL (DOS COLUMNAS) --- */
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+        }
+
+        /* COLUMNA IZQUIERDA: CHAT TÉCNICO AG3 */
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            background: rgba(10, 15, 28, 0.95);
+            border-right: 1px solid #1e293b;
+        }
+
+        .chat-header {
+            padding: 12px 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-header select {
+            background: #070b14;
+            color: #00f2fe;
+            border: 1px solid #334155;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .message.ai {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            align-self: flex-start;
+            color: #e2e8f0;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #000;
+            align-self: flex-end;
+            font-weight: 500;
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area textarea {
+            flex: 1;
+            background: #070b14;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 0.9rem;
+            resize: none;
+            height: 45px;
+            outline: none;
+        }
+
+        .chat-input-area textarea:focus {
+            border-color: #00f2fe;
+        }
+
+        .btn-send {
+            background: #00f2fe;
+            color: #000;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.05);
+        }
+
+        /* COLUMNA DERECHA: EDITOR Y VISOR EN VIVO */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            background: #050811;
+        }
+
+        .preview-toolbar {
+            padding: 10px 15px;
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-toolbar span {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .btn-action {
+            background: #1e293b;
+            color: #00f2fe;
+            border: 1px solid #00f2fe;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-action:hover {
+            background: rgba(0, 242, 254, 0.15);
+        }
+
+        #livePreview {
+            flex: 1;
+            border: none;
+            background: #ffffff;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <h1>AG3 IA Code</h1>
+            <span>Núcleo Pro 2019–2026</span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Génesis AI</a>
+            <a href="planes.html">Planes ($2 USD)</a>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <!-- Panel Izquierdo: Conversación con el Asistente de Código -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <select id="langSelect">
+                    <option value="html">HTML / CSS / JS (Web)</option>
+                    <option value="python">Python (Lógica / Backend)</option>
+                    <option value="worker">Cloudflare Worker / D1</option>
+                    <option value="web3">Solidity / Web3 / Token A1X</option>
+                </select>
+                <span style="font-size: 0.8rem; color: #10b981;">● Motor Activo</span>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    Saludos, José Gregorio. Soy <strong>AG3 IA Code</strong>, tu núcleo de programación especializado. Listo para construir aplicaciones, scripts y arquitecturas sin restricciones regionales. ¿Qué vamos a programar hoy?
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <textarea id="userInput" placeholder="Describe el código que necesitas (ej: crear una tabla interactiva con D1)..." rows="1"></textarea>
+                <button class="btn-send" id="sendBtn">Enviar</button>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Visor en Vivo de Código -->
+        <div class="preview-panel">
+            <div class="preview-toolbar">
+                <span>🖥️ Visor en Vivo (Sandbox)</span>
+                <button class="btn-action" onclick="runCodeInPreview()">Ejecutar en Pantalla</button>
+            </div>
+            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:50px; color:#333;'>El código generado aparecerá aquí en tiempo real.</h3>"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const livePreview = document.getElementById('livePreview');
+
+        function appendMessage(sender, text) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.innerHTML = text;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            userInput.value = '';
+
+            // Simulación inteligente de respuesta técnica de AG3 Code conectada al núcleo
+            setTimeout(() => {
+                const sampleCode = `<!DOCTYPE html>
+<html>
+<head><style>body{background:#070b14;color:#00f2fe;font-family:sans-serif;text-align:center;padding-top:40px;}</style></head>
+<body>
+    <h2>🚀 AG3 IA Code Output</h2>
+    <p>Código generado y ejecutado con éxito para: "${text}"</p>
+    <div style="margin-top:20px; padding:10px; background:#11223a; display:inline-block; border-radius:8px;">Estado: Conectado a Red Génesis</div>
+</body>
+</html>`;
+
+                appendMessage('ai', `He generado la estructura solicitada. Puedes ver el resultado directamente en el <strong>Visor en Vivo</strong> de la derecha.<br><br><pre style="background:#070b14; padding:8px; border-radius:6px; font-size:0.8rem; overflow-x:auto; color:#34d399;"><code>${escapeHtml(sampleCode)}</code></pre>`);
+                
+                // Actualiza el visor automáticamente
+                livePreview.srcdoc = sampleCode;
+            }, 800);
+        }
+
+        function runCodeInPreview() {
+            alert('Actualizando visor con el entorno de desarrollo activo.');
+        }
+
+        function escapeHtml(string) {
+            return string.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+    </script>
+</body>
+</html>
