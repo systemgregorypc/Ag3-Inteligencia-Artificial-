@@ -3,224 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AG3 IA Code — 1Entorno de Programación | Génesis AI</title>
+    <title>AG3 IA Code — Editor Web & Núcleo IA</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
         }
 
         body {
-            background: #070b14;
-            color: #fff;
+            background: #0b0f19;
+            color: #f8fafc;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
+        /* --- BARRA SUPERIOR --- */
         header {
-            height: 60px;
-            background: rgba(15, 23, 42, 0.9);
-            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            height: 50px;
+            background: #0f172a;
+            border-bottom: 1px solid #1e293b;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            z-index: 10;
         }
 
-        .logo-area {
+        .logo {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #38bdf8;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
-        .logo-area h1 {
-            font-size: 1.2rem;
-            color: #00f2fe;
-            letter-spacing: 1px;
-        }
-
-        .logo-area span {
-            font-size: 0.75rem;
-            background: rgba(0, 242, 254, 0.15);
-            color: #00f2fe;
-            padding: 3px 8px;
+        .logo span {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            font-size: 0.7rem;
+            padding: 2px 6px;
             border-radius: 4px;
-            border: 1px solid rgba(0, 242, 254, 0.4);
+            border: 1px solid rgba(56, 189, 248, 0.3);
         }
 
-        .nav-links {
-            display: flex;
-            gap: 15px;
+        .status-bar {
+            font-size: 0.8rem;
+            color: #10b981;
         }
 
-        .nav-links a {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 0.85rem;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: #00f2fe;
-        }
-
+        /* --- CONTENEDOR PRINCIPAL (3 COLUMNAS: CHAT, EDITOR DE CÓDIGO CON LÍNEAS, VISOR) --- */
         .workspace {
             flex: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            height: calc(100vh - 60px);
+            grid-template-columns: 320px 1fr 1fr;
+            height: calc(100vh - 50px);
             overflow: hidden;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1100px) {
             .workspace {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr 1fr;
+                grid-template-columns: 1fr 1fr;
+            }
+            .code-container-col {
+                display: none; /* Se oculta en pantallas chicas para dar espacio */
             }
         }
 
-        .chat-panel {
+        /* 1. PANEL DE IA / CHAT */
+        .ai-panel {
+            background: #0f172a;
+            border-right: 1px solid #1e293b;
             display: flex;
             flex-direction: column;
-            background: rgba(10, 15, 28, 0.95);
-            border-right: 1px solid #1e293b;
         }
 
-        .chat-header {
-            padding: 12px 15px;
-            background: rgba(15, 23, 42, 0.6);
-            border-bottom: 1px solid #1e293b;
+        .ai-header {
+            padding: 10px 15px;
+            background: #1e293b;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #cbd5e1;
+            border-bottom: 1px solid #334155;
+        }
+
+        .ai-messages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
             display: flex;
+            flex-direction: column;
             gap: 10px;
-            align-items: center;
+            font-size: 0.85rem;
         }
 
-        .chat-header select {
-            background: #070b14;
-            color: #00f2fe;
-            border: 1px solid #334155;
-            padding: 6px 10px;
+        .msg {
+            padding: 8px 12px;
             border-radius: 6px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .msg.user { background: #1e293b; color: #38bdf8; }
+        .msg.ai { background: #111827; color: #e2e8f0; border-left: 3px solid #38bdf8; }
+        .msg.error { background: #7f1d1d; color: #fca5a5; }
+
+        .ai-input-area {
+            padding: 10px;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ai-input-area textarea {
+            background: #0b0f19;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            resize: none;
+            height: 60px;
             font-size: 0.85rem;
             outline: none;
         }
 
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+        .ai-input-area textarea:focus { border-color: #38bdf8; }
 
-        .message {
-            max-width: 85%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .message.ai {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(0, 242, 254, 0.2);
-            align-self: flex-start;
-            color: #e2e8f0;
-        }
-
-        .message.user {
-            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-            color: #000;
-            align-self: flex-end;
-            font-weight: 500;
-        }
-
-        .chat-input-area {
-            padding: 15px;
-            background: #0f172a;
-            border-top: 1px solid #1e293b;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input-area textarea {
-            flex: 1;
-            background: #070b14;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 10px 12px;
-            color: #fff;
-            font-size: 0.9rem;
-            resize: none;
-            height: 45px;
-            outline: none;
-        }
-
-        .chat-input-area textarea:focus {
-            border-color: #00f2fe;
-        }
-
-        .btn-send {
-            background: #00f2fe;
+        .btn-run {
+            background: #38bdf8;
             color: #000;
             border: none;
-            padding: 0 20px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: background 0.2s;
         }
+        .btn-run:hover { background: #7dd3fc; }
 
-        .btn-send:hover {
-            transform: scale(1.05);
-        }
-
-        .preview-panel {
+        /* 2. EDITOR DE CÓDIGO EN LÍNEA (CON NÚMEROS 1 A 5000+) */
+        .code-container-col {
             display: flex;
             flex-direction: column;
-            background: #050811;
+            background: #090d16;
+            border-right: 1px solid #1e293b;
         }
 
-        .preview-toolbar {
-            padding: 10px 15px;
-            background: rgba(15, 23, 42, 0.8);
+        .editor-toolbar {
+            padding: 8px 15px;
+            background: #0f172a;
             border-bottom: 1px solid #1e293b;
+            font-size: 0.8rem;
+            color: #94a3b8;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .preview-toolbar span {
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* Números de línea dinámicos */
+        .line-numbers {
+            width: 50px;
+            background: #070a12;
+            color: #475569;
+            padding: 10px 5px;
+            text-align: right;
             font-size: 0.85rem;
-            color: #94a3b8;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid #1e293b;
         }
 
-        .btn-action {
-            background: #1e293b;
-            color: #00f2fe;
-            border: 1px solid #00f2fe;
-            padding: 5px 12px;
-            border-radius: 5px;
+        /* Área de edición de texto real */
+        #codeEditor {
+            flex: 1;
+            background: transparent;
+            color: #34d399;
+            border: none;
+            padding: 10px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+
+        /* 3. VISOR EN VIVO (SANDBOX) */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        .preview-header {
+            padding: 8px 15px;
+            background: #e2e8f0;
+            color: #1e293b;
             font-size: 0.8rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-action:hover {
-            background: rgba(0, 242, 254, 0.15);
+            font-weight: bold;
+            border-bottom: 1px solid #cbd5e1;
         }
 
         #livePreview {
             flex: 1;
             border: none;
-            background: #ffffff;
             width: 100%;
             height: 100%;
         }
@@ -229,133 +227,130 @@
 <body>
 
     <header>
-        <div class="logo-area">
-            <h1>AG3 IA Code</h1>
-            <span>Núcleo Pro 2019–2026</span>
+        <div class="logo">
+            💻 AG3 IA Code Editor <span>Núcleo Pro</span>
         </div>
-        <div class="nav-links">
-            <a href="https://genesis-ai.org/">Génesis AI</a>
-            <a href="https://genesis-ai.org/planes">Planes ($2 USD)</a>
-        </div>
+        <div class="status-bar" id="statusText">● Sistema Operativo</div>
     </header>
 
     <div class="workspace">
-        <div class="chat-panel">
-            <div class="chat-header">
-                <select id="langSelect">
-                    <option value="html">HTML / CSS / JS (Web)</option>
-                    <option value="python">Python (Lógica / Backend)</option>
-                    <option value="worker">Cloudflare Worker / D1</option>
-                    <option value="web3">Solidity / Web3 / Token A1X</option>
-                </select>
-                <span id="statusIndicator" style="font-size: 0.8rem; color: #10b981;">● Motor Activo</span>
+        <!-- PANEL 1: CHAT IA -->
+        <div class="ai-panel">
+            <div class="ai-header">🤖 Asistente IA & Corrector</div>
+            <div class="ai-messages" id="aiMessages">
+                <div class="msg ai">Hola José Gregorio. Escribe lo que deseas programar. El código aparecerá con sus líneas numeradas en el editor central y se renderizará automáticamente a la derecha. Si hay errores, la IA te los corregirá aquí.</div>
             </div>
-
-            <div class="chat-messages" id="chatMessages">
-                <div class="message ai">
-                    Saludos, José Gregorio. Escribe una orden y probaremos la conexión en vivo.
-                </div>
-            </div>
-
-            <div class="chat-input-area">
-                <textarea id="userInput" placeholder="Escribe tu orden aquí..." rows="1"></textarea>
-                <button class="btn-send" id="sendBtn">Enviar</button>
+            <div class="ai-input-area">
+                <textarea id="promptInput" placeholder="Ej: Crea una tabla con buscador y estilos modernos..."></textarea>
+                <button class="btn-run" id="sendBtn">Generar con IA</button>
             </div>
         </div>
 
-        <div class="preview-panel">
-            <div class="preview-toolbar">
-                <span>🖥️ Visor en Vivo (Sandbox)</span>
-                <button class="btn-action" onclick="alert('Visor activo')">Estado</button>
+        <!-- PANEL 2: EDITOR DE CÓDIGO CON LÍNEAS -->
+        <div class="code-container-col">
+            <div class="editor-toolbar">
+                <span>📄 Editor Fuente (HTML / JS / CSS)</span>
+                <span id="lineCount">Líneas: 1</span>
             </div>
-            <iframe id="livePreview" srcdoc="<h3>Visor en espera...</h3>"></iframe>
+            <div class="editor-wrapper">
+                <div class="line-numbers" id="lineNumbers">1</div>
+                <textarea id="codeEditor" spellcheck="false" placeholder="El código generado o escrito a mano aparecerá aquí..."></textarea>
+            </div>
+        </div>
+
+        <!-- PANEL 3: VISOR EN VIVO -->
+        <div class="preview-panel">
+            <div class="preview-header">🖥️ Vista Previa en Vivo (Sandbox)</div>
+            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:40px; color:#64748b;'>La vista previa aparecerá aquí al generar código.</h3>"></iframe>
         </div>
     </div>
 
     <script>
-        const chatMessages = document.getElementById('chatMessages');
-        const userInput = document.getElementById('userInput');
+        const promptInput = document.getElementById('promptInput');
         const sendBtn = document.getElementById('sendBtn');
+        const aiMessages = document.getElementById('aiMessages');
+        const codeEditor = document.getElementById('codeEditor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const lineCount = document.getElementById('lineCount');
         const livePreview = document.getElementById('livePreview');
-        const langSelect = document.getElementById('langSelect');
-        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
 
-        function appendMessage(sender, text) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.innerHTML = text;
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            return div;
+        // Función para actualizar los números de línea dinámicamente hasta 5000+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n').length;
+            let numbersStr = '';
+            for (let i = 1; i <= Math.max(lines, 1); i++) {
+                numbersStr += i + '\n';
+            }
+            lineNumbers.textContent = numbersStr;
+            lineCount.textContent = `Líneas: ${lines}`;
         }
 
-        async function handleSend() {
-            const promptText = userInput.value.trim();
-            const selectedLang = langSelect.value;
-            if (!promptText) return;
+        codeEditor.addEventListener('input', () => {
+            updateLineNumbers();
+            // Sincroniza en tiempo real con el visor si escribes a mano
+            livePreview.srcdoc = codeEditor.value;
+        });
 
-            appendMessage('user', promptText);
-            userInput.value = '';
+        codeEditor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = codeEditor.scrollTop;
+        });
 
-            const loadingBubble = appendMessage('ai', '⏳ Conectando con el Worker...');
-            statusIndicator.textContent = "● Enviando...";
-            statusIndicator.style.color = "#f59e0b";
+        function appendMsg(sender, text, isError = false) {
+            const div = document.createElement('div');
+            div.className = `msg ${sender} ${isError ? 'error' : ''}`;
+            div.textContent = text;
+            aiMessages.appendChild(div);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+        }
+
+        // Petición al Cloudflare Worker
+        async function handleGenerate() {
+            const text = promptInput.value.trim();
+            if (!text || sendBtn.disabled) return;
+
+            appendMsg('user', text);
+            promptInput.value = '';
+            sendBtn.disabled = true;
+            statusText.textContent = "● Generando código...";
+            statusText.style.color = "#f59e0b";
 
             try {
-                // Timeout de 15 segundos para detectar si el servidor no responde
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
-
                 const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt: promptText,
-                        language: selectedLang
-                    }),
-                    signal: controller.signal
+                    body: JSON.stringify({ prompt: text, language: 'html' })
                 });
 
-                clearTimeout(timeoutId);
-
-                const rawText = await response.text();
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (e) {
-                    throw new Error("Respuesta no válida del servidor (HTML o texto plano): " + rawText.substring(0, 100));
-                }
+                const data = await response.json();
 
                 if (response.ok && data.success) {
-                    loadingBubble.innerHTML = `✅ Código generado:<br><pre style="background:#070b14;padding:8px;margin-top:5px;font-size:0.75rem;color:#34d399;max-height:150px;overflow:auto;"><code>${escapeHtml(data.code)}</code></pre>`;
+                    codeEditor.value = data.code;
+                    updateLineNumbers();
                     livePreview.srcdoc = data.code;
+                    appendMsg('ai', '✅ Código generado y cargado en el editor con éxito. Si notas algún error lógico, descríbelo aquí y lo corregiré.');
                 } else {
-                    loadingBubble.innerHTML = `<span style="color:#f87171;">❌ Error del servidor: ${data.error || rawText}</span>`;
+                    appendMsg('ai', `❌ Error: ${data.error || 'No se pudo procesar.'}`, true);
                 }
-
             } catch (err) {
-                if (err.name === 'AbortError') {
-                    loadingBubble.innerHTML = `<span style="color:#f87171;">❌ Tiempo de espera agotado: El Worker tardó más de 15 segundos en responder (posible bloqueo de red o fallo en la IA).</span>`;
-                } else {
-                    loadingBubble.innerHTML = `<span style="color:#f87171;">❌ Error de conexión: ${err.message}</span>`;
-                }
+                appendMsg('ai', `❌ Error de red: ${err.message}`, true);
             } finally {
-                statusIndicator.textContent = "● Motor Activo";
-                statusIndicator.style.color = "#10b981";
+                sendBtn.disabled = false;
+                statusText.textContent = "● Sistema Operativo";
+                statusText.style.color = "#10b981";
             }
         }
 
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
-        }
-
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => {
+        sendBtn.addEventListener('click', handleGenerate);
+        promptInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                handleGenerate();
             }
         });
+
+        // Inicializar líneas al cargar
+        updateLineNumbers();
     </script>
 </body>
 </html>
