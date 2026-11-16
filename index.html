@@ -305,8 +305,8 @@
             appendMessage('ai', `<span id="${loadingId}">AG3 IA Code está procesando la solicitud en el núcleo...</span>`);
 
             try {
-                // Conexión real apuntando a la ruta exacta del Worker
-                const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/api/ag3-code', {
+                // Conexión directo a la raíz de tu Cloudflare Worker
+                const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
