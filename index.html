@@ -3,56 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AG3 IA Code — Editor Web & Núcleo IA</title>
+    <title>AG3 IA Code — Entorno de Programación | Génesis AI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
         body { background: #0b0f19; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { height: 50px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .logo { font-size: 1rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-        .logo span { background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
-        .status-bar { font-size: 0.8rem; color: #10b981; }
-        .workspace { flex: 1; display: grid; grid-template-columns: 320px 1fr 1fr; height: calc(100vh - 50px); overflow: hidden; }
+        header { height: 55px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .logo { font-size: 1.1rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
+        .logo span { background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .status-bar { font-size: 0.85rem; color: #10b981; }
+        
+        .workspace { flex: 1; display: grid; grid-template-columns: 320px 1fr 1fr; height: calc(100vh - 55px); overflow: hidden; }
         @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr 1fr; } .code-container-col { display: none; } }
+
+        /* Panel Izquierdo: Chat e IA */
         .ai-panel { background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; }
-        .ai-header { padding: 10px 15px; background: #1e293b; font-size: 0.85rem; font-weight: bold; color: #cbd5e1; border-bottom: 1px solid #334155; }
-        .ai-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; }
-        .msg { padding: 8px 12px; border-radius: 6px; line-height: 1.4; word-break: break-word; }
+        .ai-header { padding: 12px 15px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; flex-direction: column; gap: 8px; }
+        .ai-header select { background: #0b0f19; color: #38bdf8; border: 1px solid #475569; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; outline: none; }
+        
+        .ai-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; }
+        .msg { padding: 10px 12px; border-radius: 6px; line-height: 1.4; word-break: break-word; }
         .msg.user { background: #1e293b; color: #38bdf8; }
         .msg.ai { background: #111827; color: #e2e8f0; border-left: 3px solid #38bdf8; }
-        .ai-input-area { padding: 10px; background: #0f172a; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px; }
-        .ai-input-area textarea { background: #0b0f19; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 4px; resize: none; height: 60px; font-size: 0.85rem; outline: none; }
+
+        .ai-input-area { padding: 12px; background: #0f172a; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px; }
+        .ai-input-area textarea { background: #0b0f19; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 6px; resize: none; height: 65px; font-size: 0.85rem; outline: none; }
         .ai-input-area textarea:focus { border-color: #38bdf8; }
-        .btn-run { background: #38bdf8; color: #000; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-run { background: #38bdf8; color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .btn-run:hover { background: #7dd3fc; }
+
+        /* Panel Central: Editor con números de línea (1 a 5000+) */
         .code-container-col { display: flex; flex-direction: column; background: #090d16; border-right: 1px solid #1e293b; }
-        .editor-toolbar { padding: 8px 15px; background: #0f172a; border-bottom: 1px solid #1e293b; font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+        .editor-toolbar { padding: 10px 15px; background: #0f172a; border-bottom: 1px solid #1e293b; font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
         .editor-wrapper { flex: 1; display: flex; overflow: auto; position: relative; }
-        .line-numbers { width: 50px; background: #070a12; color: #475569; padding: 10px 5px; text-align: right; font-size: 0.85rem; line-height: 1.5; user-select: none; border-right: 1px solid #1e293b; }
-        #codeEditor { flex: 1; background: transparent; color: #34d399; border: none; padding: 10px; font-size: 0.85rem; line-height: 1.5; resize: none; outline: none; white-space: pre; overflow-x: auto; }
+        .line-numbers { width: 55px; background: #070a12; color: #475569; padding: 12px 5px; text-align: right; font-size: 0.85rem; line-height: 1.5; user-select: none; border-right: 1px solid #1e293b; }
+        #codeEditor { flex: 1; background: transparent; color: #34d399; border: none; padding: 12px; font-size: 0.85rem; line-height: 1.5; resize: none; outline: none; white-space: pre; overflow-x: auto; }
+
+        /* Panel Derecho: Visor en Vivo */
         .preview-panel { display: flex; flex-direction: column; background: #ffffff; }
-        .preview-header { padding: 8px 15px; background: #e2e8f0; color: #1e293b; font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid #cbd5e1; }
+        .preview-header { padding: 10px 15px; background: #e2e8f0; color: #1e293b; font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
         #livePreview { flex: 1; border: none; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo">💻 AG3 IA Code Editor <span>Núcleo Pro</span></div>
+        <div class="logo">💻 AG3 IA Code Editor <span>Núcleo Pro 2026</span></div>
         <div class="status-bar" id="statusText">● Sistema Operativo</div>
     </header>
+
     <div class="workspace">
+        <!-- Panel 1: Selector y Chat IA -->
         <div class="ai-panel">
-            <div class="ai-header">🤖 Asistente IA & Corrector</div>
+            <div class="ai-header">
+                <span style="font-size:0.8rem; color:#94a3b8; font-weight:bold;">MODO / LENGUAJE:</span>
+                <select id="langSelect">
+                    <option value="html">HTML / CSS / JS (Web)</option>
+                    <option value="python">Python (Lógica / Backend)</option>
+                    <option value="worker">Cloudflare Worker (API)</option>
+                    <option value="web3">Solidity / Web3 (Token A1X)</option>
+                </select>
+            </div>
             <div class="ai-messages" id="aiMessages">
-                <div class="msg ai">Hola José Gregorio. Escribe una orden (ej: "crea una tarjeta de perfil") y aparecerá inmediatamente en el editor numerado y en el visor.</div>
+                <div class="msg ai">Hola José Gregorio. Todos los módulos están activos. Selecciona tu lenguaje, escribe una orden y el código aparecerá en el editor con sus líneas numeradas.</div>
             </div>
             <div class="ai-input-area">
-                <textarea id="promptInput" placeholder="Ej: crea una tarjeta de perfil..."></textarea>
+                <textarea id="promptInput" placeholder="Describe lo que deseas programar..."></textarea>
                 <button class="btn-run" id="sendBtn">Generar con IA</button>
             </div>
         </div>
+
+        <!-- Panel 2: Editor Fuente (Líneas 1 a 5000+) -->
         <div class="code-container-col">
             <div class="editor-toolbar">
-                <span>📄 Editor Fuente (HTML / CSS / JS)</span>
+                <span>📄 Editor con Números de Línea</span>
                 <span id="lineCount">Líneas: 1</span>
             </div>
             <div class="editor-wrapper">
@@ -60,11 +82,16 @@
                 <textarea id="codeEditor" spellcheck="false" placeholder="El código aparecerá aquí..."></textarea>
             </div>
         </div>
+
+        <!-- Panel 3: Visor en Vivo -->
         <div class="preview-panel">
-            <div class="preview-header">🖥️ Vista Previa en Vivo (Sandbox)</div>
-            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:40px; color:#64748b;'>La vista previa aparecerá aquí.</h3>"></iframe>
+            <div class="preview-header">
+                <span>🖥️ Vista Previa en Vivo (Sandbox)</span>
+            </div>
+            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:50px; color:#64748b;'>La vista previa se renderizará aquí.</h3>"></iframe>
         </div>
     </div>
+
     <script>
         const promptInput = document.getElementById('promptInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -74,6 +101,7 @@
         const lineCount = document.getElementById('lineCount');
         const livePreview = document.getElementById('livePreview');
         const statusText = document.getElementById('statusText');
+        const langSelect = document.getElementById('langSelect');
 
         function updateLineNumbers() {
             const lines = codeEditor.value.split('\n').length;
@@ -85,7 +113,9 @@
 
         codeEditor.addEventListener('input', () => {
             updateLineNumbers();
-            livePreview.srcdoc = codeEditor.value;
+            if (langSelect.value === 'html') {
+                livePreview.srcdoc = codeEditor.value;
+            }
         });
         codeEditor.addEventListener('scroll', () => { lineNumbers.scrollTop = codeEditor.scrollTop; });
 
@@ -99,27 +129,33 @@
 
         async function handleGenerate() {
             const text = promptInput.value.trim();
+            const selectedLang = langSelect.value;
             if (!text || sendBtn.disabled) return;
 
             appendMsg('user', text);
             promptInput.value = '';
             sendBtn.disabled = true;
-            statusText.textContent = "● Procesando...";
+            statusText.textContent = "● Procesando en el núcleo...";
             statusText.style.color = "#f59e0b";
 
             try {
                 const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: text, language: 'html' })
+                    body: JSON.stringify({ prompt: text, language: selectedLang })
                 });
 
                 const data = await response.json();
                 if (response.ok && data.success) {
                     codeEditor.value = data.code;
                     updateLineNumbers();
-                    livePreview.srcdoc = data.code;
-                    appendMsg('ai', '✅ Código cargado en el editor y renderizado con éxito.');
+                    
+                    if (selectedLang === 'html') {
+                        livePreview.srcdoc = data.code;
+                    } else {
+                        livePreview.srcdoc = `<div style="font-family:sans-serif; padding:20px; color:#1e293b;"><h3>Código (${selectedLang.toUpperCase()}) generado con éxito:</h3><pre style="background:#f1f5f9; padding:10px; border-radius:6px; overflow:auto; font-size:0.8rem; margin-top:10px;"><code>${data.code}</code></pre></div>`;
+                    }
+                    appendMsg('ai', `✅ Código en ${selectedLang.toUpperCase()} generado y cargado en el editor.`);
                 } else {
                     appendMsg('ai', '❌ Error: ' + (data.error || 'No se pudo generar.'));
                 }
