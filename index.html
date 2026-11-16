@@ -5,266 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AG3 IA Code — Editor Web & Núcleo IA</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Fira Code', 'Courier New', Courier, monospace;
-        }
-
-        body {
-            background: #0b0f19;
-            color: #f8fafc;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* --- BARRA SUPERIOR --- */
-        header {
-            height: 50px;
-            background: #0f172a;
-            border-bottom: 1px solid #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-
-        .logo {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #38bdf8;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .logo span {
-            background: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        }
-
-        .status-bar {
-            font-size: 0.8rem;
-            color: #10b981;
-        }
-
-        /* --- CONTENEDOR PRINCIPAL (3 COLUMNAS: CHAT, EDITOR DE CÓDIGO CON LÍNEAS, VISOR) --- */
-        .workspace {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 320px 1fr 1fr;
-            height: calc(100vh - 50px);
-            overflow: hidden;
-        }
-
-        @media (max-width: 1100px) {
-            .workspace {
-                grid-template-columns: 1fr 1fr;
-            }
-            .code-container-col {
-                display: none; /* Se oculta en pantallas chicas para dar espacio */
-            }
-        }
-
-        /* 1. PANEL DE IA / CHAT */
-        .ai-panel {
-            background: #0f172a;
-            border-right: 1px solid #1e293b;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .ai-header {
-            padding: 10px 15px;
-            background: #1e293b;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #cbd5e1;
-            border-bottom: 1px solid #334155;
-        }
-
-        .ai-messages {
-            flex: 1;
-            padding: 12px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 0.85rem;
-        }
-
-        .msg {
-            padding: 8px 12px;
-            border-radius: 6px;
-            line-height: 1.4;
-            word-break: break-word;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
+        body { background: #0b0f19; color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { height: 50px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .logo { font-size: 1rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+        .logo span { background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .status-bar { font-size: 0.8rem; color: #10b981; }
+        .workspace { flex: 1; display: grid; grid-template-columns: 320px 1fr 1fr; height: calc(100vh - 50px); overflow: hidden; }
+        @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr 1fr; } .code-container-col { display: none; } }
+        .ai-panel { background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; }
+        .ai-header { padding: 10px 15px; background: #1e293b; font-size: 0.85rem; font-weight: bold; color: #cbd5e1; border-bottom: 1px solid #334155; }
+        .ai-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; }
+        .msg { padding: 8px 12px; border-radius: 6px; line-height: 1.4; word-break: break-word; }
         .msg.user { background: #1e293b; color: #38bdf8; }
         .msg.ai { background: #111827; color: #e2e8f0; border-left: 3px solid #38bdf8; }
-        .msg.error { background: #7f1d1d; color: #fca5a5; }
-
-        .ai-input-area {
-            padding: 10px;
-            background: #0f172a;
-            border-top: 1px solid #1e293b;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .ai-input-area textarea {
-            background: #0b0f19;
-            border: 1px solid #334155;
-            color: #fff;
-            padding: 8px;
-            border-radius: 4px;
-            resize: none;
-            height: 60px;
-            font-size: 0.85rem;
-            outline: none;
-        }
-
+        .ai-input-area { padding: 10px; background: #0f172a; border-top: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px; }
+        .ai-input-area textarea { background: #0b0f19; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 4px; resize: none; height: 60px; font-size: 0.85rem; outline: none; }
         .ai-input-area textarea:focus { border-color: #38bdf8; }
-
-        .btn-run {
-            background: #38bdf8;
-            color: #000;
-            border: none;
-            padding: 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+        .btn-run { background: #38bdf8; color: #000; border: none; padding: 8px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .btn-run:hover { background: #7dd3fc; }
-
-        /* 2. EDITOR DE CÓDIGO EN LÍNEA (CON NÚMEROS 1 A 5000+) */
-        .code-container-col {
-            display: flex;
-            flex-direction: column;
-            background: #090d16;
-            border-right: 1px solid #1e293b;
-        }
-
-        .editor-toolbar {
-            padding: 8px 15px;
-            background: #0f172a;
-            border-bottom: 1px solid #1e293b;
-            font-size: 0.8rem;
-            color: #94a3b8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .editor-wrapper {
-            flex: 1;
-            display: flex;
-            overflow: auto;
-            position: relative;
-        }
-
-        /* Números de línea dinámicos */
-        .line-numbers {
-            width: 50px;
-            background: #070a12;
-            color: #475569;
-            padding: 10px 5px;
-            text-align: right;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            user-select: none;
-            border-right: 1px solid #1e293b;
-        }
-
-        /* Área de edición de texto real */
-        #codeEditor {
-            flex: 1;
-            background: transparent;
-            color: #34d399;
-            border: none;
-            padding: 10px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            resize: none;
-            outline: none;
-            white-space: pre;
-            overflow-wrap: normal;
-            overflow-x: auto;
-        }
-
-        /* 3. VISOR EN VIVO (SANDBOX) */
-        .preview-panel {
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-        }
-
-        .preview-header {
-            padding: 8px 15px;
-            background: #e2e8f0;
-            color: #1e293b;
-            font-size: 0.8rem;
-            font-weight: bold;
-            border-bottom: 1px solid #cbd5e1;
-        }
-
-        #livePreview {
-            flex: 1;
-            border: none;
-            width: 100%;
-            height: 100%;
-        }
+        .code-container-col { display: flex; flex-direction: column; background: #090d16; border-right: 1px solid #1e293b; }
+        .editor-toolbar { padding: 8px 15px; background: #0f172a; border-bottom: 1px solid #1e293b; font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+        .editor-wrapper { flex: 1; display: flex; overflow: auto; position: relative; }
+        .line-numbers { width: 50px; background: #070a12; color: #475569; padding: 10px 5px; text-align: right; font-size: 0.85rem; line-height: 1.5; user-select: none; border-right: 1px solid #1e293b; }
+        #codeEditor { flex: 1; background: transparent; color: #34d399; border: none; padding: 10px; font-size: 0.85rem; line-height: 1.5; resize: none; outline: none; white-space: pre; overflow-x: auto; }
+        .preview-panel { display: flex; flex-direction: column; background: #ffffff; }
+        .preview-header { padding: 8px 15px; background: #e2e8f0; color: #1e293b; font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid #cbd5e1; }
+        #livePreview { flex: 1; border: none; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
-
     <header>
-        <div class="logo">
-            💻 AG3 IA Code Editor <span>Núcleo Pro</span>
-        </div>
+        <div class="logo">💻 AG3 IA Code Editor <span>Núcleo Pro</span></div>
         <div class="status-bar" id="statusText">● Sistema Operativo</div>
     </header>
-
     <div class="workspace">
-        <!-- PANEL 1: CHAT IA -->
         <div class="ai-panel">
             <div class="ai-header">🤖 Asistente IA & Corrector</div>
             <div class="ai-messages" id="aiMessages">
-                <div class="msg ai">Hola José Gregorio. Escribe lo que deseas programar. El código aparecerá con sus líneas numeradas en el editor central y se renderizará automáticamente a la derecha. Si hay errores, la IA te los corregirá aquí.</div>
+                <div class="msg ai">Hola José Gregorio. Escribe una orden (ej: "crea una tarjeta de perfil") y aparecerá inmediatamente en el editor numerado y en el visor.</div>
             </div>
             <div class="ai-input-area">
-                <textarea id="promptInput" placeholder="Ej: Crea una tabla con buscador y estilos modernos..."></textarea>
+                <textarea id="promptInput" placeholder="Ej: crea una tarjeta de perfil..."></textarea>
                 <button class="btn-run" id="sendBtn">Generar con IA</button>
             </div>
         </div>
-
-        <!-- PANEL 2: EDITOR DE CÓDIGO CON LÍNEAS -->
         <div class="code-container-col">
             <div class="editor-toolbar">
-                <span>📄 Editor Fuente (HTML / JS / CSS)</span>
+                <span>📄 Editor Fuente (HTML / CSS / JS)</span>
                 <span id="lineCount">Líneas: 1</span>
             </div>
             <div class="editor-wrapper">
                 <div class="line-numbers" id="lineNumbers">1</div>
-                <textarea id="codeEditor" spellcheck="false" placeholder="El código generado o escrito a mano aparecerá aquí..."></textarea>
+                <textarea id="codeEditor" spellcheck="false" placeholder="El código aparecerá aquí..."></textarea>
             </div>
         </div>
-
-        <!-- PANEL 3: VISOR EN VIVO -->
         <div class="preview-panel">
             <div class="preview-header">🖥️ Vista Previa en Vivo (Sandbox)</div>
-            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:40px; color:#64748b;'>La vista previa aparecerá aquí al generar código.</h3>"></iframe>
+            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:40px; color:#64748b;'>La vista previa aparecerá aquí.</h3>"></iframe>
         </div>
     </div>
-
     <script>
         const promptInput = document.getElementById('promptInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -275,36 +75,28 @@
         const livePreview = document.getElementById('livePreview');
         const statusText = document.getElementById('statusText');
 
-        // Función para actualizar los números de línea dinámicamente hasta 5000+
         function updateLineNumbers() {
             const lines = codeEditor.value.split('\n').length;
             let numbersStr = '';
-            for (let i = 1; i <= Math.max(lines, 1); i++) {
-                numbersStr += i + '\n';
-            }
+            for (let i = 1; i <= Math.max(lines, 1); i++) { numbersStr += i + '\n'; }
             lineNumbers.textContent = numbersStr;
             lineCount.textContent = `Líneas: ${lines}`;
         }
 
         codeEditor.addEventListener('input', () => {
             updateLineNumbers();
-            // Sincroniza en tiempo real con el visor si escribes a mano
             livePreview.srcdoc = codeEditor.value;
         });
+        codeEditor.addEventListener('scroll', () => { lineNumbers.scrollTop = codeEditor.scrollTop; });
 
-        codeEditor.addEventListener('scroll', () => {
-            lineNumbers.scrollTop = codeEditor.scrollTop;
-        });
-
-        function appendMsg(sender, text, isError = false) {
+        function appendMsg(sender, text) {
             const div = document.createElement('div');
-            div.className = `msg ${sender} ${isError ? 'error' : ''}`;
+            div.className = `msg ${sender}`;
             div.textContent = text;
             aiMessages.appendChild(div);
             aiMessages.scrollTop = aiMessages.scrollHeight;
         }
 
-        // Petición al Cloudflare Worker
         async function handleGenerate() {
             const text = promptInput.value.trim();
             if (!text || sendBtn.disabled) return;
@@ -312,7 +104,7 @@
             appendMsg('user', text);
             promptInput.value = '';
             sendBtn.disabled = true;
-            statusText.textContent = "● Generando código...";
+            statusText.textContent = "● Procesando...";
             statusText.style.color = "#f59e0b";
 
             try {
@@ -323,17 +115,16 @@
                 });
 
                 const data = await response.json();
-
                 if (response.ok && data.success) {
                     codeEditor.value = data.code;
                     updateLineNumbers();
                     livePreview.srcdoc = data.code;
-                    appendMsg('ai', '✅ Código generado y cargado en el editor con éxito. Si notas algún error lógico, descríbelo aquí y lo corregiré.');
+                    appendMsg('ai', '✅ Código cargado en el editor y renderizado con éxito.');
                 } else {
-                    appendMsg('ai', `❌ Error: ${data.error || 'No se pudo procesar.'}`, true);
+                    appendMsg('ai', '❌ Error: ' + (data.error || 'No se pudo generar.'));
                 }
             } catch (err) {
-                appendMsg('ai', `❌ Error de red: ${err.message}`, true);
+                appendMsg('ai', '❌ Error de red: ' + err.message);
             } finally {
                 sendBtn.disabled = false;
                 statusText.textContent = "● Sistema Operativo";
@@ -343,13 +134,9 @@
 
         sendBtn.addEventListener('click', handleGenerate);
         promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleGenerate();
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); }
         });
 
-        // Inicializar líneas al cargar
         updateLineNumbers();
     </script>
 </body>
