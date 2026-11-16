@@ -38,41 +38,46 @@
         #codeEditor { flex: 1; background: transparent; color: #34d399; border: none; padding: 10px; font-size: 0.85rem; line-height: 1.5; resize: none; outline: none; white-space: pre; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
 
         .preview-panel { display: flex; flex-direction: column; background: #ffffff; overflow: hidden; }
-        .preview-header { padding: 8px 15px; background: #e2e8f0; color: #1e293b; font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
-        .btn-action { background: #cbd5e1; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; color: #1e293b; }
+        .preview-header { padding: 8px 15px; background: #e2e8f0; color: #1e293b; font-size: 0.8rem; font-weight: bold; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .action-buttons { display: flex; gap: 6px; }
+        .btn-action { background: #cbd5e1; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-weight: bold; color: #1e293b; }
         .btn-action:hover { background: #94a3b8; }
+        .btn-save { background: #0284c7; color: #ffffff; }
+        .btn-save:hover { background: #0369a1; }
         #livePreview { flex: 1; border: none; width: 100%; height: 100%; }
         
-        /* Consola técnica estándar y modo Mainframe COBOL */
+        /* Consolas técnicas */
         #codeConsole { flex: 1; background: #0b0f19; color: #38bdf8; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.85rem; overflow: auto; display: none; white-space: pre; line-height: 1.5; }
         #codeConsole.cobol-mode { background: #020a02; color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); border-top: 2px solid #14532d; }
+        #codeConsole.eeprom-mode { background: #0d0902; color: #fbbf24; border-top: 2px solid #78350f; }
     </style>
 </head>
 <body>
 
     <header>
         <div class="logo">💻 AG3 IA Code <span>Pro IDE 2026</span></div>
-        <div class="status-bar"><span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block;"></span> IA Generativa Activa</div>
+        <div class="status-bar"><span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block;"></span> Núcleo Multi-Lenguaje Activo</div>
     </header>
 
     <div class="workspace" id="workspace">
         <div class="ai-panel">
             <div class="ai-header">
-                <span style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">LENGUAJE DE COMPILACIÓN IA:</span>
+                <span style="font-size:0.75rem; color:#94a3b8; font-weight:bold;">SELECCIONA EL ENTORNO / LENGUAJE:</span>
                 <select id="langSelect">
                     <option value="html">HTML / CSS / JS (Web)</option>
                     <option value="cobol">COBOL (Mainframe / Clásico)</option>
+                    <option value="eeprom">SPI / EEPROM / NAND (Electrónica)</option>
                     <option value="python">Python (Backend)</option>
                     <option value="worker">Cloudflare Worker</option>
                     <option value="web3">Solidity / Web3 (Token A1X)</option>
                 </select>
             </div>
             <div class="ai-messages" id="aiMessages">
-                <div class="msg ai">AG3 IA lista. Describe con tus palabras lo que deseas programar en HTML, COBOL, Python, Workers o Web3 y la IA escribirá el código fuente.</div>
+                <div class="msg ai">AG3 IA lista. Elige el lenguaje (Web, COBOL, SPI/EEPROM, Python, Worker o Web3) y escribe tu instrucción.</div>
             </div>
             <div class="ai-input-area">
-                <textarea id="promptInput" placeholder="Ej: Calcula la nómina de un empleado con horas extras..."></textarea>
-                <button class="btn-run" id="sendBtn">Programar con IA</button>
+                <textarea id="promptInput" placeholder="Ej: Generar volcado SPI 25Q64 para Smart TV..."></textarea>
+                <button class="btn-run" id="sendBtn">Ejecutar Orden IA</button>
             </div>
         </div>
 
@@ -85,7 +90,7 @@
             </div>
             <div class="editor-wrapper">
                 <div class="line-numbers" id="lineNumbers">1</div>
-                <textarea id="codeEditor" spellcheck="false" placeholder="El código generado por la IA aparecerá aquí..."></textarea>
+                <textarea id="codeEditor" spellcheck="false" placeholder="El código fuente o estructura de memoria aparecerá aquí..."></textarea>
             </div>
         </div>
 
@@ -94,9 +99,12 @@
         <div class="preview-panel">
             <div class="preview-header">
                 <span id="previewTitle">🖥️ Vista Previa en Vivo (Sandbox)</span>
-                <button class="btn-action" onclick="copiarCodigo()">Copiar Código</button>
+                <div class="action-buttons">
+                    <button class="btn-action" onclick="copiarCodigo()">Copiar</button>
+                    <button class="btn-action btn-save" onclick="guardarArchivo()">💾 Guardar PC / USB</button>
+                </div>
             </div>
-            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:50px; color:#64748b;'>El visor web o terminal Mainframe se mostrará aquí.</h3>"></iframe>
+            <iframe id="livePreview" srcdoc="<h3 style='font-family:sans-serif; text-align:center; margin-top:50px; color:#64748b;'>El visor web o consola técnica se mostrará aquí.</h3>"></iframe>
             <div id="codeConsole"></div>
         </div>
     </div>
@@ -144,6 +152,36 @@
             alert('¡Código copiado al portapapeles!');
         }
 
+        // Función independiente para guardar en PC o pendrive USB según el lenguaje seleccionado
+        function guardarArchivo() {
+            const contenido = codeEditor.value;
+            if (!contenido.trim()) {
+                alert('Primero genera o escribe un código antes de guardar.');
+                return;
+            }
+
+            const lang = langSelect.value;
+            let extension = 'txt';
+            let nombreArchivo = 'ag3_codigo';
+
+            if (lang === 'html') { extension = 'html'; nombreArchivo = 'ag3_web'; }
+            else if (lang === 'cobol') { extension = 'cbl'; nombreArchivo = 'AG3_MAINFRAME'; }
+            else if (lang === 'eeprom') { extension = 'bin'; nombreArchivo = 'ag3_eeprom_spi_dump'; }
+            else if (lang === 'python') { extension = 'py'; nombreArchivo = 'ag3_script'; }
+            else if (lang === 'worker') { extension = 'js'; nombreArchivo = 'ag3_worker'; }
+            else if (lang === 'web3') { extension = 'sol'; nombreArchivo = 'A1XToken'; }
+
+            const blob = new Blob([contenido], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const enlace = document.createElement('a');
+            enlace.href = url;
+            enlace.download = `${nombreArchivo}.${extension}`;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+            URL.revokeObjectURL(url);
+        }
+
         async function handleGenerate() {
             const text = promptInput.value.trim();
             const selectedLang = langSelect.value;
@@ -152,7 +190,7 @@
             appendMsg('user', text);
             promptInput.value = '';
             sendBtn.disabled = true;
-            sendBtn.textContent = 'IA Programando...';
+            sendBtn.textContent = 'Procesando...';
 
             try {
                 const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/', {
@@ -165,7 +203,7 @@
                 if (response.ok && data.success) {
                     codeEditor.value = data.code;
                     updateLineNumbers();
-                    codeConsole.classList.remove('cobol-mode');
+                    codeConsole.classList.remove('cobol-mode', 'eeprom-mode');
 
                     if (selectedLang === 'html') {
                         livePreview.style.display = 'block';
@@ -178,6 +216,12 @@
                         codeConsole.classList.add('cobol-mode');
                         previewTitle.textContent = "📟 Terminal IBM Mainframe — COBOL";
                         codeConsole.textContent = data.code;
+                    } else if (selectedLang === 'eeprom') {
+                        livePreview.style.display = 'none';
+                        codeConsole.style.display = 'block';
+                        codeConsole.classList.add('eeprom-mode');
+                        previewTitle.textContent = "🔌 Programador SPI / EEPROM / NAND";
+                        codeConsole.textContent = data.code;
                     } else {
                         livePreview.style.display = 'none';
                         codeConsole.style.display = 'block';
@@ -185,7 +229,7 @@
                         codeConsole.textContent = data.code;
                     }
 
-                    appendMsg('ai', `✅ Código en ${selectedLang.toUpperCase()} generado por la IA.`);
+                    appendMsg('ai', `✅ Módulo ${selectedLang.toUpperCase()} listo. Puedes guardarlo en tu PC o USB.`);
                 } else {
                     appendMsg('ai', '❌ ' + (data.error || 'No se pudo procesar la orden.'));
                 }
@@ -193,7 +237,7 @@
                 appendMsg('ai', '❌ Error de conexión: ' + err.message);
             } finally {
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'Programar con IA';
+                sendBtn.textContent = 'Ejecutar Orden IA';
             }
         }
 
