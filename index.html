@@ -282,6 +282,7 @@
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const livePreview = document.getElementById('livePreview');
+        const langSelect = document.getElementById('langSelect');
 
         function appendMessage(sender, text) {
             const div = document.createElement('div');
@@ -291,38 +292,72 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function handleSend() {
-            const text = userInput.value.trim();
-            if (!text) return;
+        async function handleSend() {
+            const promptText = userInput.value.trim();
+            const selectedLang = langSelect.value;
+            if (!promptText) return;
 
-            appendMessage('user', text);
+            appendMessage('user', promptText);
             userInput.value = '';
 
-            // Simulación inteligente de respuesta técnica de AG3 Code conectada al núcleo
-            setTimeout(() => {
-                const sampleCode = `<!DOCTYPE html>
-<html>
-<head><style>body{background:#070b14;color:#00f2fe;font-family:sans-serif;text-align:center;padding-top:40px;}</style></head>
-<body>
-    <h2>🚀 AG3 IA Code Output</h2>
-    <p>Código generado y ejecutado con éxito para: "${text}"</p>
-    <div style="margin-top:20px; padding:10px; background:#11223a; display:inline-block; border-radius:8px;">Estado: Conectado a Red Génesis</div>
-</body>
-</html>`;
+            const loadingId = 'msg-' + Date.now();
+            appendMessage('ai', `<span id="${loadingId}">AG3 IA Code está procesando la solicitud en el núcleo...</span>`);
 
-                appendMessage('ai', `He generado la estructura solicitada. Puedes ver el resultado directamente en el <strong>Visor en Vivo</strong> de la derecha.<br><br><pre style="background:#070b14; padding:8px; border-radius:6px; font-size:0.8rem; overflow-x:auto; color:#34d399;"><code>${escapeHtml(sampleCode)}</code></pre>`);
-                
-                // Actualiza el visor automáticamente
-                livePreview.srcdoc = sampleCode;
-            }, 800);
+            try {
+                // Conexión real con tu Cloudflare Worker
+                const response = await fetch('https://ag3-code-api.genesis-ia.workers.dev/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: promptText,
+                        language: selectedLang
+                    })
+                });
+
+                const data = await response.json();
+                const loadingElement = document.getElementById(loadingId);
+
+                if (data.success && data.code) {
+                    if (loadingElement) loadingElement.parentElement.remove();
+
+                    const formattedCode = escapeHtml(data.code);
+                    
+                    appendMessage('ai', `Código generado con éxito:<br><br><pre style="background:#070b14; padding:10px; border-radius:6px; font-size:0.8rem; overflow-x:auto; color:#34d399; max-height:200px;"><code>${formattedCode}</code></pre>`);
+
+                    // Si es HTML, se ejecuta automáticamente en el visor en vivo
+                    if (selectedLang === 'html' || data.code.includes('<!DOCTYPE html>') || data.code.includes('<html')) {
+                        livePreview.srcdoc = data.code;
+                    } else {
+                        livePreview.srcdoc = `<div style="font-family:sans-serif; padding:20px; color:#333;"><h3>Resultado de ejecución (${selectedLang}):</h3><pre style="background:#f4f4f4; padding:10px; border-radius:5px;">${formattedCode}</pre></div>`;
+                    }
+
+                } else {
+                    if (loadingElement) {
+                        loadingElement.innerHTML = `Error del núcleo: ${data.error || 'No se pudo generar código.'}`;
+                        loadingElement.style.color = '#ff4444';
+                    }
+                }
+
+            } catch (err) {
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.innerHTML = `Fallo crítico de red al conectar con la API: ${err.message}`;
+                    loadingElement.style.color = '#ff4444';
+                }
+            }
         }
 
         function runCodeInPreview() {
-            alert('Actualizando visor con el entorno de desarrollo activo.');
+            alert('El visor ya se encuentra sincronizado con el núcleo activo.');
         }
 
         function escapeHtml(string) {
-            return string.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+            return string
+                .replace(/&/g, "&")
+                .replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/"/g, """)
+                .replace(/'/g, "'");
         }
 
         sendBtn.addEventListener('click', handleSend);
