@@ -46,10 +46,11 @@
         .btn-save:hover { background: #0369a1; }
         #livePreview { flex: 1; border: none; width: 100%; height: 100%; }
         
-        /* Consolas técnicas */
+        /* Consolas técnicas especializadas */
         #codeConsole { flex: 1; background: #0b0f19; color: #38bdf8; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.85rem; overflow: auto; display: none; white-space: pre; line-height: 1.5; }
         #codeConsole.cobol-mode { background: #020a02; color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); border-top: 2px solid #14532d; }
         #codeConsole.eeprom-mode { background: #0d0902; color: #fbbf24; border-top: 2px solid #78350f; }
+        #codeConsole.ada-mode { background: #030b14; color: #22d3ee; text-shadow: 0 0 3px rgba(34, 211, 238, 0.3); border-top: 2px solid #0e7490; }
     </style>
 </head>
 <body>
@@ -66,6 +67,7 @@
                 <select id="langSelect">
                     <option value="html">HTML / CSS / JS (Web)</option>
                     <option value="cobol">COBOL (Mainframe / Clásico)</option>
+                    <option value="ada">Ada (Aeroespacial / Misión Crítica)</option>
                     <option value="eeprom">SPI / EEPROM / NAND (Electrónica)</option>
                     <option value="python">Python (Backend)</option>
                     <option value="worker">Cloudflare Worker</option>
@@ -73,10 +75,10 @@
                 </select>
             </div>
             <div class="ai-messages" id="aiMessages">
-                <div class="msg ai">AG3 IA lista. Elige el lenguaje (Web, COBOL, SPI/EEPROM, Python, Worker o Web3) y escribe tu instrucción.</div>
+                <div class="msg ai">AG3 IA lista. Elige el lenguaje (Web, COBOL, Ada, SPI/EEPROM, Python, Worker o Web3) y escribe tu instrucción.</div>
             </div>
             <div class="ai-input-area">
-                <textarea id="promptInput" placeholder="Ej: Generar volcado SPI 25Q64 para Smart TV..."></textarea>
+                <textarea id="promptInput" placeholder="Ej: Control de telemetría y altitud en Ada..."></textarea>
                 <button class="btn-run" id="sendBtn">Ejecutar Orden IA</button>
             </div>
         </div>
@@ -90,7 +92,7 @@
             </div>
             <div class="editor-wrapper">
                 <div class="line-numbers" id="lineNumbers">1</div>
-                <textarea id="codeEditor" spellcheck="false" placeholder="El código fuente o estructura de memoria aparecerá aquí..."></textarea>
+                <textarea id="codeEditor" spellcheck="false" placeholder="El código fuente aparecerá aquí..."></textarea>
             </div>
         </div>
 
@@ -152,7 +154,6 @@
             alert('¡Código copiado al portapapeles!');
         }
 
-        // Función independiente para guardar en PC o pendrive USB según el lenguaje seleccionado
         function guardarArchivo() {
             const contenido = codeEditor.value;
             if (!contenido.trim()) {
@@ -166,6 +167,7 @@
 
             if (lang === 'html') { extension = 'html'; nombreArchivo = 'ag3_web'; }
             else if (lang === 'cobol') { extension = 'cbl'; nombreArchivo = 'AG3_MAINFRAME'; }
+            else if (lang === 'ada') { extension = 'adb'; nombreArchivo = 'ag3_mision_critica'; }
             else if (lang === 'eeprom') { extension = 'bin'; nombreArchivo = 'ag3_eeprom_spi_dump'; }
             else if (lang === 'python') { extension = 'py'; nombreArchivo = 'ag3_script'; }
             else if (lang === 'worker') { extension = 'js'; nombreArchivo = 'ag3_worker'; }
@@ -203,7 +205,7 @@
                 if (response.ok && data.success) {
                     codeEditor.value = data.code;
                     updateLineNumbers();
-                    codeConsole.classList.remove('cobol-mode', 'eeprom-mode');
+                    codeConsole.classList.remove('cobol-mode', 'eeprom-mode', 'ada-mode');
 
                     if (selectedLang === 'html') {
                         livePreview.style.display = 'block';
@@ -215,6 +217,12 @@
                         codeConsole.style.display = 'block';
                         codeConsole.classList.add('cobol-mode');
                         previewTitle.textContent = "📟 Terminal IBM Mainframe — COBOL";
+                        codeConsole.textContent = data.code;
+                    } else if (selectedLang === 'ada') {
+                        livePreview.style.display = 'none';
+                        codeConsole.style.display = 'block';
+                        codeConsole.classList.add('ada-mode');
+                        previewTitle.textContent = "🛰️ Consola Aviónica / Misión Crítica — ADA";
                         codeConsole.textContent = data.code;
                     } else if (selectedLang === 'eeprom') {
                         livePreview.style.display = 'none';
