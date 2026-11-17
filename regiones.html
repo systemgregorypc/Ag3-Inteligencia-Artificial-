@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG3 IA Code — Regiones Globales y Libre Acceso</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #070b14; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* Barra Superior */
+        header { background: #0f172a; border-bottom: 1px solid #1e293b; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; }
+        .logo { font-size: 1.1rem; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
+        .logo span { background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+        .controls-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .lang-box { display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 6px; border: 1px solid #334155; }
+        .lang-box label { font-size: 0.8rem; color: #94a3b8; }
+        .lang-box select { background: #070b14; color: #38bdf8; border: 1px solid #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; outline: none; cursor: pointer; }
+
+        .btn-back { background: #38bdf8; color: #000; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; }
+        .btn-back:hover { background: #7dd3fc; }
+
+        /* Banner Manifiesto */
+        .hero-manifesto { text-align: center; padding: 30px 20px 20px; max-width: 1000px; margin: 0 auto; }
+        .badge-global { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .hero-manifesto h1 { font-size: 2rem; color: #f8fafc; margin-bottom: 10px; line-height: 1.2; }
+        .hero-manifesto h1 span { color: #38bdf8; }
+        .hero-manifesto p { color: #94a3b8; font-size: 1.05rem; max-width: 780px; margin: 0 auto; line-height: 1.5; }
+
+        /* Contenedor del Mapa */
+        .map-section { max-width: 1200px; width: 95%; margin: 15px auto; background: #0b0f19; border: 1px solid #1e293b; border-radius: 12px; padding: 15px; position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        #world-map { width: 100%; height: 500px; display: block; }
+        .country { fill: #1e293b; stroke: #0f172a; stroke-width: 0.6px; transition: fill 0.2s, opacity 0.2s; cursor: pointer; }
+        .country:hover { fill: #38bdf8; }
+        .country.special-region { fill: #f59e0b; stroke: #fef3c7; stroke-width: 0.9px; }
+        .country.special-region:hover { fill: #fbbf24; }
+
+        /* Tooltip flotante al pasar el ratón */
+        #tooltip { position: absolute; background: rgba(15, 23, 42, 0.95); border: 1px solid #38bdf8; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 20; }
+
+        /* Leyenda del Mapa */
+        .map-legend { display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid #1e293b; font-size: 0.85rem; }
+        .legend-item { display: flex; align-items: center; gap: 8px; color: #cbd5e1; }
+        .dot { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+        .dot.global { background: #1e293b; border: 1px solid #38bdf8; }
+        .dot.special { background: #f59e0b; border: 1px solid #fef3c7; }
+
+        /* Tarjetas de Principios y Tarifas */
+        .cards-grid { max-width: 1200px; width: 95%; margin: 20px auto 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .info-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 22px; }
+        .info-card.highlight { border-color: #f59e0b; background: linear-gradient(145deg, #0f172a 0%, #1c1507 100%); }
+        .info-card h3 { color: #38bdf8; font-size: 1.1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .info-card.highlight h3 { color: #fbbf24; }
+        .info-card p { color: #94a3b8; font-size: 0.9rem; line-height: 1.5; }
+
+        /* Widget Traductor Universal */
+        .translator-footer { background: #0f172a; border-top: 1px solid #1e293b; padding: 18px; text-align: center; margin-top: auto; }
+        .translator-footer p { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">🌍 AG3 IA Code <span id="t-badge-header">Red Mundial Sin Fronteras</span></div>
+        <div class="controls-right">
+            <div class="lang-box">
+                <label for="uiLang">🌐 Idioma:</label>
+                <select id="uiLang" onchange="cambiarIdioma(this.value)">
+                    <option value="es">Español (Global)</option>
+                    <option value="en">English (International)</option>
+                    <option value="ru">Русский (Ruso)</option>
+                    <option value="zh">中文 (Chino)</option>
+                    <option value="ko">조선말 / 한국어 (Coreano)</option>
+                    <option value="fa">فارسی (Persa / Irán)</option>
+                    <option value="ar">العربية (Árabe)</option>
+                    <option value="fr">Français (Francés)</option>
+                    <option value="pt">Português (Portugués)</option>
+                </select>
+            </div>
+            <a href="index.html" class="btn-back" id="t-btn-back">← Volver al IDE AG3</a>
+        </div>
+    </header>
+
+    <section class="hero-manifesto">
+        <div class="badge-global" id="t-pill">🟢 USO GLOBAL SIN RESTRICCIONES NI BLOQUEOS</div>
+        <h1 id="t-title">Plataforma Libre Global: <span>Libre Determinación de los Pueblos, Humanos y Máquinas</span></h1>
+        <p id="t-subtitle">AG3 IA Code opera bajo principios de soberanía tecnológica abierta. Sin censura geográfica, sin exclusiones financieras y con acceso universal a herramientas de programación avanzada en todos los continentes.</p>
+    </section>
+
+    <section class="map-section">
+        <div id="tooltip"></div>
+        <svg id="world-map" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="map-legend">
+            <div class="legend-item"><span class="dot global"></span> <span id="t-leg-global">Acceso Global Abierto — Plan Universal ($2 USD)</span></div>
+            <div class="legend-item"><span class="dot special"></span> <span id="t-leg-special">Regiones con Precios Especiales y Acceso Directo: Corea del Norte e Irán</span></div>
+        </div>
+    </section>
+
+    <section class="cards-grid">
+        <div class="info-card">
+            <h3 id="t-c1-title">🌐 Uso Global Sin Restricciones</h3>
+            <p id="t-c1-desc">Cualquier desarrollador, técnico electrónico o estudiante en cualquier país del planeta puede acceder a los entornos Web, COBOL, Ada, Python y SPI/EEPROM sin bloqueos por IP ni discriminación territorial.</p>
+        </div>
+        <div class="info-card highlight">
+            <h3 id="t-c2-title">⭐ Corea del Norte e Irán: Precios Especiales</h3>
+            <p id="t-c2-desc">Tarifas preferenciales solidarias y canales alternativos directos habilitados especialmente para ingenieros, estudiantes y centros técnicos de la República Popular Democrática de Corea (RPDC) e Irán.</p>
+        </div>
+        <div class="info-card">
+            <h3 id="t-c3-title">🤝 Libre Determinación: Humanos y Máquinas</h3>
+            <p id="t-c3-desc">Creemos en la cooperación libre entre la inteligencia humana y las herramientas computacionales, garantizando que cada pueblo controle su propio código, su hardware y su soberanía digital.</p>
+        </div>
+    </section>
+
+    <footer class="translator-footer">
+        <p id="t-footer-note">¿Necesitas otro de los más de 100 idiomas del mundo? Usa el traductor universal instantáneo:</p>
+        <div id="google_translate_element"></div>
+    </footer>
+
+    <script>
+        // Diccionario Multi-Idioma Instantáneo
+        const traducciones = {
+            es: {
+                badge: "Red Mundial Sin Fronteras",
+                back: "← Volver al IDE AG3",
+                pill: "🟢 USO GLOBAL SIN RESTRICCIONES NI BLOQUEOS",
+                title: "Plataforma Libre Global: <span>Libre Determinación de los Pueblos, Humanos y Máquinas</span>",
+                subtitle: "AG3 IA Code opera bajo principios de soberanía tecnológica abierta. Sin censura geográfica, sin exclusiones financieras y con acceso universal a herramientas de programación avanzada en todos los continentes.",
+                legGlobal: "Acceso Global Abierto — Plan Universal ($2 USD)",
+                legSpecial: "Regiones con Precios Especiales y Acceso Directo: Corea del Norte e Irán",
+                c1Title: "🌐 Uso Global Sin Restricciones",
+                c1Desc: "Cualquier desarrollador, técnico electrónico o estudiante en cualquier país del planeta puede acceder a los entornos Web, COBOL, Ada, Python y SPI/EEPROM sin bloqueos por IP ni discriminación territorial.",
+                c2Title: "⭐ Corea del Norte e Irán: Precios Especiales",
+                c2Desc: "Tarifas preferenciales solidarias y canales alternativos directos habilitados especialmente para ingenieros, estudiantes y centros técnicos de Corea del Norte e Irán.",
+                c3Title: "🤝 Libre Determinación: Humanos y Máquinas",
+                c3Desc: "Creemos en la cooperación libre entre la inteligencia humana y las herramientas computacionales, garantizando que cada pueblo controle su propio código, su hardware y su soberanía digital."
+            },
+            en: {
+                badge: "Borderless Global Network",
+                back: "← Back to AG3 IDE",
+                pill: "🟢 GLOBAL USE WITHOUT RESTRICTIONS OR BLOCKS",
+                title: "Free Global Platform: <span>Self-Determination of Peoples, Humans and Machines</span>",
+                subtitle: "AG3 IA Code operates under open technological sovereignty principles. No geographic censorship, no financial exclusions, and universal access to advanced coding tools across all continents.",
+                legGlobal: "Open Global Access — Universal Plan ($2 USD)",
+                legSpecial: "Special Pricing & Direct Access Regions: North Korea & Iran",
+                c1Title: "🌐 Unrestricted Global Access",
+                c1Desc: "Every developer, electronics technician, or student anywhere on Earth can access Web, COBOL, Ada, Python, and SPI/EEPROM environments without IP blocks or territorial discrimination.",
+                c2Title: "⭐ North Korea & Iran: Special Pricing",
+                c2Desc: "Solidarity preferential rates and direct alternative access channels enabled specifically for engineers, students, and technical centers in North Korea and Iran.",
+                c3Title: "🤝 Self-Determination: Humans & Machines",
+                c3Desc: "We stand for free cooperation between human intelligence and computational tools, ensuring every nation controls its own code, hardware, and digital sovereignty."
+            },
+            ru: {
+                badge: "Глобальная сеть без границ",
+                back: "← Вернуться в AG3 IDE",
+                pill: "🟢 ГЛОБАЛЬНОЕ ИСПОЛЬЗОВАНИЕ БЕЗ ОГРАНИЧЕНИЙ",
+                title: "Свободная Глобальная Платформа: <span>Самоопределение народов, людей и машин</span>",
+                subtitle: "AG3 IA Code работает на принципах открытого технологического суверенитета. Без географической цензуры и финансовых ограничений по всему миру.",
+                legGlobal: "Открытый глобальный доступ — Универсальный план ($2 USD)",
+                legSpecial: "Регионы со специальными ценами: Северная Корея и Иран",
+                c1Title: "🌐 Глобальный доступ без ограничений",
+                c1Desc: "Любой разработчик, электронщик или студент в любой стране мира может свободно использовать среды Web, COBOL, Ada, Python и SPI/EEPROM.",
+                c2Title: "⭐ Северная Корея и Иран: Специальные цены",
+                c2Desc: "Льготные тарифы и прямые каналы доступа специально для инженеров, студентов и технических центров КНДР и Ирана.",
+                c3Title: "🤝 Самоопределение: Люди и Машины",
+                c3Desc: "Мы поддерживаем свободное сотрудничество человеческого интеллекта и вычислительных систем для цифрового суверенитета каждого народа."
+            },
+            zh: {
+                badge: "无国界全球网络",
+                back: "← 返回 AG3 编程环境",
+                pill: "🟢 全球无限制自由使用",
+                title: "自由全球平台：<span>人民、人类与机器的自决权</span>",
+                subtitle: "AG3 IA Code 秉持开放技术主权原则运行。无地理审查，无金融排斥，为五大洲提供通用的高级编程工具。",
+                legGlobal: "全球开放访问 — 通用计划 ($2 美元)",
+                legSpecial: "特别优惠价格与直接访问地区：朝鲜和伊朗",
+                c1Title: "🌐 全球无限制使用",
+                c1Desc: "地球上任何国家的开发者、电子技术人员或学生都可以无障碍访问 Web、COBOL、Ada、Python 和 SPI/EEPROM 环境。",
+                c2Title: "⭐ 朝鲜与伊朗：特别优惠价格",
+                c2Desc: "专为朝鲜和伊朗的工程师、学生及技术中心提供团结优惠费率和直接替代访问渠道。",
+                c3Title: "🤝 自决权：人类与机器",
+                c3Desc: "我们坚信人类智能与计算工具之间的自由合作，确保每个国家都能掌控自己的代码、硬件和数字主权。"
+            },
+            ko: {
+                badge: "국경 없는 글로벌 네트워크",
+                back: "← AG3 IDE로 돌아가기",
+                pill: "🟢 제한 없는 전 세계 자유 사용",
+                title: "자유 글로벌 플랫폼: <span>인민, 인간과 기계의 자결권</span>",
+                subtitle: "AG3 IA Code는 개방형 기술 주권 원칙에 따라 운영됩니다. 지리적 검열이나 금융 배제 없이 모든 대륙에서 보편적으로 접근할 수 있습니다.",
+                legGlobal: "전 세계 개방형 접속 — 일반 요금제 ($2 USD)",
+                legSpecial: "특별 우대 가격 및 직접 접속 지역: 조선(북한) 및 이란",
+                c1Title: "🌐 제한 없는 글로벌 사용",
+                c1Desc: "전 세계 어느 나라의 개발자, 전자 기술자, 학생이라도 IP 차단 없이 Web, COBOL, Ada, Python 및 SPI/EEPROM 환경을 이용할 수 있습니다.",
+                c2Title: "⭐ 조선 및 이란: 특별 우대 가격",
+                c2Desc: "조선민주주의인민공화국과 이란의 기술자, 학생 및 기술 센터를 위해 특별 우대 요금과 직접 접속 경로를 지원합니다.",
+                c3Title: "🤝 자결권: 인간과 기계",
+                c3Desc: "인간 지성과 컴퓨터 도구 간의 자유로운 협력을 통해 모든 인민이 자신의 코드와 하드웨어, 디지털 주권을 통제할 수 있도록 보장합니다."
+            },
+            fa: {
+                badge: "شبکه جهانی بدون مرز",
+                back: "← بازگشت به محیط AG3",
+                pill: "🟢 استفاده جهانی بدون محدودیت و تحریم",
+                title: "پلتفرم آزاد جهانی: <span>حق تعیین سرنوشت ملت‌ها، انسان‌ها و ماشین‌ها</span>",
+                subtitle: "AG3 IA Code بر پایه اصول حاکمیت فناوری باز فعالیت می‌کند. بدون سانسور جغرافیایی و بدون محدودیت مالی برای تمام قاره‌ها.",
+                legGlobal: "دسترسی آزاد جهانی — طرح همگانی (۲ دلار)",
+                legSpecial: "مناطق با قیمت ویژه و دسترسی مستقیم: کره شمالی و ایران",
+                c1Title: "🌐 استفاده جهانی بدون محدودیت",
+                c1Desc: "هر برنامه‌نویس، تکنسین الکترونیک یا دانشجو در هر نقطه از جهان می‌تواند بدون مسدودسازی IP به محیط‌های Web، COBOL، Ada، Python و SPI/EEPROM دسترسی داشته باشد.",
+                c2Title: "⭐ ایران و کره شمالی: قیمت‌های ویژه",
+                c2Desc: "تعرفه‌های ترجیحی همبستگی و کانال‌های دسترسی مستقیم ویژه مهندسان، دانشجویان و مراکز فنی ایران و کره شمالی فعال است.",
+                c3Title: "🤝 حق تعیین سرنوشت: انسان‌ها و ماشین‌ها",
+                c3Desc: "ما به همکاری آزاد میان هوش انسانی و ابزارهای محاسباتی باور داریم تا هر ملتی کد، سخت‌افزار و حاکمیت دیجیتال خود را در اختیار داشته باشد."
+            },
+            ar: {
+                badge: "شبكة عالمية بلا حدود",
+                back: "← العودة إلى بيئة AG3",
+                pill: "🟢 استخدام عالمي بلا قيود أو حظر",
+                title: "منصة عالمية حرة: <span>تقرير المصير للشعوب والبشر والآلات</span>",
+                subtitle: "تعمل منصة AG3 IA Code وفق مبادئ السيادة التكنولوجية المفتوحة. بلا رقابة جغرافية وبلا استبعاد مالي لجميع القارات.",
+                legGlobal: "وصول عالمي مفتوح — الخطة الشاملة (2 دولار)",
+                legSpecial: "مناطق بأسعار خاصة ووصول مباشر: كوريا الشمالية وإيران",
+                c1Title: "🌐 استخدام عالمي بلا قيود",
+                c1Desc: "يمكن لأي مطور أو فني إلكترونيات أو طالب في أي دولة الوصول إلى بيئات Web وCOBOL وAda وPython وSPI/EEPROM دون أي حظر.",
+                c2Title: "⭐ كوريا الشمالية وإيران: أسعار خاصة",
+                c2Desc: "أسعار تفضيلية تضامنية وقنوات وصول مباشرة مخصصة للمهندسين والطلاب والمراكز التقنية في كوريا الشمالية وإيران.",
+                c3Title: "🤝 تقرير المصير: البشر والآلات",
+                c3Desc: "نؤمن بالتعاون الحر بين الذكاء البشري والأدوات الحاسوبية لضمان سيطرة كل شعب على برمجياته وأجهزته وسيادته الرقمية."
+            },
+            fr: {
+                badge: "Réseau Mondial Sans Frontières",
+                back: "← Retour à l'IDE AG3",
+                pill: "🟢 UTILISATION MONDIALE SANS RESTRICTIONS",
+                title: "Plateforme Libre Mondiale : <span>Libre Détermination des Peuples, Humains et Machines</span>",
+                subtitle: "AG3 IA Code fonctionne selon des principes de souveraineté technologique ouverte. Sans censure géographique ni exclusion financière sur tous les continents.",
+                legGlobal: "Accès Mondial Ouvert — Plan Universel (2 $ USD)",
+                legSpecial: "Régions à Tarifs Spéciaux et Accès Direct : Corée du Nord et Iran",
+                c1Title: "🌐 Utilisation Mondiale Sans Restrictions",
+                c1Desc: "Tout développeur, technicien en électronique ou étudiant dans n'importe quel pays peut accéder librement aux environnements Web, COBOL, Ada, Python et SPI/EEPROM.",
+                c2Title: "⭐ Corée du Nord et Iran : Tarifs Spéciaux",
+                c2Desc: "Tarifs préférentiels solidaires et canaux d'accès directs spécialement activés pour les ingénieurs, étudiants et centres techniques de Corée du Nord et d'Iran.",
+                c3Title: "🤝 Libre Détermination : Humains et Machines",
+                c3Desc: "Nous croyons en la coopération libre entre l'intelligence humaine et les outils informatiques pour garantir la souveraineté numérique de chaque peuple."
+            },
+            pt: {
+                badge: "Rede Mundial Sem Fronteiras",
+                back: "← Voltar ao IDE AG3",
+                pill: "🟢 USO GLOBAL SEM RESTRIÇÕES OU BLOQUEIOS",
+                title: "Plataforma Livre Global: <span>Autodeterminação dos Povos, Humanos e Máquinas</span>",
+                subtitle: "O AG3 IA Code opera sob princípios de soberania tecnológica aberta. Sem censura geográfica, sem exclusões financeiras e com acesso universal em todos os continentes.",
+                legGlobal: "Acesso Global Aberto — Plano Universal ($2 USD)",
+                legSpecial: "Regiões com Preços Especiais e Acesso Direto: Coreia do Norte e Irã",
+                c1Title: "🌐 Uso Global Sem Restrições",
+                c1Desc: "Qualquer desenvolvedor, técnico em eletrônica ou estudante em qualquer país do planeta pode acessar os ambientes Web, COBOL, Ada, Python e SPI/EEPROM sem bloqueios.",
+                c2Title: "⭐ Coreia do Norte e Irã: Preços Especiais",
+                c2Desc: "Tarifas preferenciais solidárias e canais diretos habilitados especialmente para engenheiros, estudantes e centros técnicos da Coreia do Norte e do Irã.",
+                c3Title: "🤝 Autodeterminação: Humanos e Máquinas",
+                c3Desc: "Acreditamos na cooperação livre entre a inteligência humana e as ferramentas computacionais, garantindo que cada povo controle seu próprio código e soberania digital."
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            const t = traducciones[lang] || traducciones.es;
+            document.getElementById('t-badge-header').textContent = t.badge;
+            document.getElementById('t-btn-back').textContent = t.back;
+            document.getElementById('t-pill').textContent = t.pill;
+            document.getElementById('t-title').innerHTML = t.title;
+            document.getElementById('t-subtitle').textContent = t.subtitle;
+            document.getElementById('t-leg-global').textContent = t.legGlobal;
+            document.getElementById('t-leg-special').textContent = t.legSpecial;
+            document.getElementById('t-c1-title').textContent = t.c1Title;
+            document.getElementById('t-c1-desc').textContent = t.c1Desc;
+            document.getElementById('t-c2-title').textContent = t.c2Title;
+            document.getElementById('t-c2-desc').textContent = t.c2Desc;
+            document.getElementById('t-c3-title').textContent = t.c3Title;
+            document.getElementById('t-c3-desc').textContent = t.c3Desc;
+
+            // Ajustar dirección de texto para Persa y Árabe
+            document.body.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
+        }
+
+        // Renderizado del Mapa Mundial Interactivo (D3 + TopoJSON Natural Earth)
+        const svg = d3.select("#world-map");
+        const tooltip = document.getElementById("tooltip");
+        const projection = d3.geoNaturalEarth1().scale(175).translate([480, 265]);
+        const path = d3.geoPath().projection(projection);
+
+        // Códigos ISO numéricos: 408 = Corea del Norte, 364 = Irán
+        const regionesEspeciales = {
+            "408": { nombre: "Corea del Norte (RPDC)", estado: "⭐ Tarifa Especial Solidaria / Acceso Directo Sin Restricciones" },
+            "364": { nombre: "Irán (República Islámica)", estado: "⭐ Tarifa Especial Solidaria / Acceso Directo Sin Restricciones" }
+        };
+
+        d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(world => {
+            const countries = topojson.feature(world, world.objects.countries).features;
+
+            svg.selectAll("path")
+                .data(countries)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", d => regionesEspeciales[String(d.id).padStart(3, '0')] ? "country special-region" : "country")
+                .on("mousemove", function(event, d) {
+                    const idStr = String(d.id).padStart(3, '0');
+                    const especial = regionesEspeciales[idStr];
+                    const nombrePais = especial ? especial.nombre : (d.properties.name || "Territorio Global");
+                    const detalle = especial ? especial.estado : "🟢 Acceso Global Abierto ($2 USD) — Libre Determinación";
+
+                    tooltip.style.opacity = 1;
+                    tooltip.style.left = (event.offsetX + 15) + "px";
+                    tooltip.style.top = (event.offsetY - 15) + "px";
+                    tooltip.innerHTML = `<strong style="color:#38bdf8;">${nombrePais}</strong><br><span style="font-size:0.8rem; color:#e2e8f0;">${detalle}</span>`;
+                })
+                .on("mouseout", function() {
+                    tooltip.style.opacity = 0;
+                });
+        });
+    </script>
+
+    <!-- Traductor Universal para más de 100 idiomas adicionales -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({ pageLanguage: 'es', layout: google.translate.TranslateElement.InlineLayout.SIMPLE }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
